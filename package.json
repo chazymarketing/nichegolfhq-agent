@@ -1,0 +1,20 @@
+{
+  "name": "nichegolfhq-agent",
+  "version": "1.0.0",
+  "description": "AI-powered competitive amateur golf assistant for nichegolfhq.com",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "crawl": "node src/crawler.js",
+    "dev": "node --watch src/server.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.30.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.0",
+    "express": "^4.18.2",
+    "node-cron": "^3.0.3",
+    "puppeteer": "^23.0.0"
+  }
+}
