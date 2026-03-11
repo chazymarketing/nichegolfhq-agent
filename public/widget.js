@@ -49,7 +49,7 @@
     #ngh-launcher {
       position: fixed;
       bottom: 24px;
-      right: 24px;
+      left: 24px;
       z-index: 99999;
       width: 60px;
       height: 60px;
@@ -75,7 +75,7 @@
     #ngh-chat {
       position: fixed;
       bottom: 96px;
-      right: 24px;
+      left: 24px;
       z-index: 99999;
       width: 380px;
       max-width: calc(100vw - 32px);
@@ -243,7 +243,7 @@
       #ngh-chat {
         width: calc(100vw - 16px);
         height: calc(100vh - 100px);
-        right: 8px;
+        left: 8px;
         bottom: 80px;
         border-radius: 12px;
       }
