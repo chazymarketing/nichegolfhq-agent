@@ -10,7 +10,7 @@
  *   <script src="/widget.js" data-api="https://your-api.com" defer></script>
  */
 
-(function () 
+(function () {
   "use strict";
 
   // ── Config ───────────────────────────────────────────────
@@ -319,7 +319,7 @@
   function addMessage(role, content) {
     const container = document.getElementById("ngh-messages");
     const div = document.createElement("div");
-    div.className = \`ngh-msg ${role}\`;
+    div.className = `ngh-msg ${role}`;
     div.textContent = content;
     container.appendChild(div);
     container.scrollTop = container.scrollHeight;
@@ -357,7 +357,7 @@
     showTyping();
 
     try {
-      const res = await fetch(\`${API_BASE}/api/chat\`, {
+      const res = await fetch(`${API_BASE}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
