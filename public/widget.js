@@ -10,7 +10,7 @@
  *   <script src="/widget.js" data-api="https://your-api.com" defer></script>
  */
 
-(function () {
+(function () 
   "use strict";
 
   // ── Config ───────────────────────────────────────────────
@@ -54,7 +54,7 @@
       width: 60px;
       height: 60px;
       border-radius: 50%;
-      background: \${BRAND.accent};
+      background: ${BRAND.accent};
       border: none;
       cursor: pointer;
       box-shadow: 0 4px 20px rgba(0,0,0,0.25);
@@ -100,7 +100,7 @@
 
     /* ── Header ────────────────────────────── */
     #ngh-header {
-      background: \${BRAND.accent};
+      background: ${BRAND.accent};
       color: white;
       padding: 16px 20px;
       display: flex;
@@ -152,7 +152,7 @@
     }
     .ngh-msg.user {
       align-self: flex-end;
-      background: \${BRAND.accent};
+      background: ${BRAND.accent};
       color: white;
       border-bottom-right-radius: 4px;
     }
@@ -164,8 +164,8 @@
       border-bottom-left-radius: 4px;
     }
     .ngh-msg.greeting {
-      background: \${BRAND.accentLight};
-      border: 1px solid \${BRAND.accent}33;
+      background: ${BRAND.accentLight};
+      border: 1px solid ${BRAND.accent}33;
       color: #1a3a1a;
     }
 
@@ -176,7 +176,7 @@
     }
     .ngh-typing span {
       width: 8px; height: 8px;
-      background: \${BRAND.accent};
+      background: ${BRAND.accent};
       border-radius: 50%;
       opacity: 0.4;
       animation: ngh-bounce 1.2s infinite;
@@ -210,20 +210,20 @@
       line-height: 1.4;
     }
     #ngh-input:focus {
-      border-color: \${BRAND.accent};
-      box-shadow: 0 0 0 2px \${BRAND.accent}22;
+      border-color: ${BRAND.accent};
+      box-shadow: 0 0 0 2px ${BRAND.accent}22;
     }
     #ngh-send {
       width: 40px; height: 40px;
       border-radius: 10px;
-      background: \${BRAND.accent};
+      background: ${BRAND.accent};
       border: none;
       cursor: pointer;
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
       transition: background 0.15s;
     }
-    #ngh-send:hover { background: \${BRAND.accentDark}; }
+    #ngh-send:hover { background: ${BRAND.accentDark}; }
     #ngh-send:disabled { opacity: 0.5; cursor: not-allowed; }
     #ngh-send svg { width: 18px; height: 18px; fill: white; }
 
@@ -236,7 +236,7 @@
       background: white;
       border-top: 1px solid #f0f0f0;
     }
-    #ngh-footer a { color: \${BRAND.accent}; text-decoration: none; }
+    #ngh-footer a { color: ${BRAND.accent}; text-decoration: none; }
 
     /* ── Mobile ─────────────────────────────── */
     @media (max-width: 440px) {
@@ -274,20 +274,20 @@
         <div id="ngh-header">
           <div id="ngh-header-icon">⛳</div>
           <div id="ngh-header-text">
-            <h3>\${BRAND.name}</h3>
+            <h3>${BRAND.name}</h3>
             <p>Powered by nichegolfHQ</p>
           </div>
           <button id="ngh-close" aria-label="Close chat">&times;</button>
         </div>
 
         <div id="ngh-messages">
-          <div class="ngh-msg assistant greeting">\${BRAND.greeting}</div>
+          <div class="ngh-msg assistant greeting">${BRAND.greeting}</div>
         </div>
 
         <div id="ngh-input-area">
           <textarea
             id="ngh-input"
-            placeholder="\${BRAND.placeholder}"
+            placeholder="${BRAND.placeholder}"
             rows="1"
             maxlength="2000"
           ></textarea>
@@ -319,7 +319,7 @@
   function addMessage(role, content) {
     const container = document.getElementById("ngh-messages");
     const div = document.createElement("div");
-    div.className = \`ngh-msg \${role}\`;
+    div.className = \`ngh-msg ${role}\`;
     div.textContent = content;
     container.appendChild(div);
     container.scrollTop = container.scrollHeight;
@@ -357,7 +357,7 @@
     showTyping();
 
     try {
-      const res = await fetch(\`\${API_BASE}/api/chat\`, {
+      const res = await fetch(\`${API_BASE}/api/chat\`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
