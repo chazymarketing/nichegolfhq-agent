@@ -100,24 +100,63 @@ function findRelevantContext(question, kb, maxChunks = 5) {
   // section specifically rather than just taking the first N chars of the page
   const isRankingsQuery = /rank|top\s*10|top\s*ten|#1|number\s*one|leaderboard|best\s+player/i.test(question);
 
+  // Detect gender-specific queries to extract the right rankings section
+  const isWomensQuery = /wom[ae]n|female|lad(y|ies)/i.test(question);
+  const isMensQuery = /\bm[ae]n['s]*\b|male|\bguy/i.test(question);
+
   return topPages
     .map(({ page }) => {
       let excerpt = "";
 
       if (isRankingsQuery) {
-        // Try to find and extract the rankings section from the page body
-        const rankingsStart = page.body.toLowerCase().indexOf("rankings");
-        const top10Start = page.body.toLowerCase().indexOf("top 10");
-        const menTop10Start = page.body.toLowerCase().indexOf("men's top 10");
-        const womenTop10Start = page.body.toLowerCase().indexOf("women's top 10");
+        const bodyLower = page.body.toLowerCase();
 
-        // Find the earliest rankings-related section
-        const starts = [rankingsStart, top10Start, menTop10Start, womenTop10Start]
-          .filter((i) => i >= 0);
+        // Find all rankings section positions
+        const menTop10Start = bodyLower.indexOf("men's top 10");
+        const womenTop10Start = bodyLower.indexOf("women's top 10");
+        const rankingsStart = bodyLower.indexOf("rankings");
+        const top10Start = bodyLower.indexOf("top 10");
 
-        if (starts.length > 0) {
-          const start = Math.max(0, Math.min(...starts) - 100); // a bit before for context
-          excerpt = page.body.slice(start, start + 5000);
+        // Strategy: extract multiple sections to ensure both men's and women's
+        // rankings are included, with priority based on the question
+        const sections = [];
+
+        if (isWomensQuery && womenTop10Start >= 0) {
+          // Women-specific query: prioritize women's section, include more chars
+          const start = Math.max(0, womenTop10Start - 100);
+          sections.push(page.body.slice(start, start + 4000));
+        }
+
+        if (isMensQuery && menTop10Start >= 0) {
+          // Men-specific query: prioritize men's section
+          const start = Math.max(0, menTop10Start - 100);
+          sections.push(page.body.slice(start, start + 4000));
+        }
+
+        // For non-gendered queries or if specific section wasn't found,
+        // extract BOTH men's and women's sections
+        if (sections.length === 0) {
+          if (menTop10Start >= 0) {
+            const start = Math.max(0, menTop10Start - 100);
+            sections.push(page.body.slice(start, start + 3000));
+          }
+          if (womenTop10Start >= 0) {
+            const start = Math.max(0, womenTop10Start - 100);
+            sections.push(page.body.slice(start, start + 3000));
+          }
+        }
+
+        // If we still have nothing, fall back to earliest rankings mention
+        if (sections.length === 0) {
+          const starts = [rankingsStart, top10Start].filter((i) => i >= 0);
+          if (starts.length > 0) {
+            const start = Math.max(0, Math.min(...starts) - 100);
+            sections.push(page.body.slice(start, start + 6000));
+          }
+        }
+
+        if (sections.length > 0) {
+          excerpt = sections.join("\n\n");
         }
       }
 
