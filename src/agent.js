@@ -11,7 +11,7 @@ import { loadKnowledgeBase } from "./crawler.js";
 
 const client = new Anthropic();
 
-// ── Context retrieval (improved keyword search) ─────────────────
+// ── Context retrieval (improved keyword search) ─────────────────────
 
 /**
  * Synonym / related-term expansion so that questions like
@@ -41,7 +41,7 @@ const SYNONYM_MAP = {
 /**
  * Normalize smart/curly quotes to straight ASCII quotes.
  * The site uses U+2019 (right single quotation mark) for apostrophes
- * (e.g., "WOMEN’S TOP 10"), which won't match a straight apostrophe.
+ * (e.g., "WOMEN’S TOP 10"), which won’t match a straight apostrophe.
  */
 function normalizeQuotes(str) {
   return str
@@ -62,6 +62,7 @@ function findRelevantContext(question, kb, maxChunks = 5) {
     .split(/\s+/)
     .filter((w) => w.length > 2);
 
+  // Expand keywords with synonyms for broader matching
   const expandedTerms = new Set(rawKeywords);
   for (const kw of rawKeywords) {
     const synonyms = SYNONYM_MAP[kw];
@@ -71,6 +72,12 @@ function findRelevantContext(question, kb, maxChunks = 5) {
   }
   const allTerms = Array.from(expandedTerms);
 
+  // Detect query type
+  const isRankingsQuery = /rank|top\s*10|top\s*ten|#1|number\s*one|leaderboard|best\s+player/i.test(question);
+  const isWomensQuery = /wom[ae]n|female|lad(y|ies)/i.test(question);
+  const isMensQuery = /\bm[ae]n['s]*\b|male|\bguy/i.test(question);
+
+  // Score each page by keyword overlap
   const scored = kb.pages.map((page) => {
     const text = normalizeQuotes(`${page.title} ${page.metaDesc} ${page.body}`).toLowerCase();
     let score = 0;
@@ -79,7 +86,6 @@ function findRelevantContext(question, kb, maxChunks = 5) {
       const matches = text.split(kw).length - 1;
       score += matches * 2;
     }
-
     for (const term of allTerms) {
       if (!rawKeywords.includes(term)) {
         const matches = text.split(term).length - 1;
@@ -87,20 +93,34 @@ function findRelevantContext(question, kb, maxChunks = 5) {
       }
     }
 
-    if (/\/(midamgolfhq|juniorgolfhq|seniorgolfhq)\/?$/.test(page.url)) {
-      score *= 1.5;
+    // Section landing pages contain rankings tables but are short (~1000 chars).
+    // Without boosting, long newsletter pages outscore them via sheer keyword volume.
+    const isSectionPage = /\/(midamgolfhq|juniorgolfhq|seniorgolfhq)\/?$/.test(page.url);
+    if (isSectionPage) {
+      score = (score / Math.max(text.length, 1)) * 10000;
+      score *= 5;
     }
 
-    return { page, score };
+    return { page, score, isSectionPage };
   });
 
   scored.sort((a, b) => b.score - a.score);
-  const topPages = scored.slice(0, maxChunks).filter((s) => s.score > 0);
-  if (topPages.length === 0) return "";
 
-  const isRankingsQuery = /rank|top\s*10|top\s*ten|#1|number\s*one|leaderboard|best\s+player/i.test(question);
-  const isWomensQuery = /wom[ae]n|female|lad(y|ies)/i.test(question);
-  const isMensQuery = /\bm[ae]n['s]*\b|male|\bguy/i.test(question);
+  // For rankings queries, ALWAYS include the relevant section page
+  let topPages = scored.slice(0, maxChunks).filter((s) => s.score > 0);
+
+  if (isRankingsQuery) {
+    const hasSectionPage = topPages.some((s) => s.isSectionPage);
+    if (!hasSectionPage) {
+      const bestSection = scored.find((s) => s.isSectionPage && s.score > 0);
+      if (bestSection) {
+        topPages.unshift(bestSection);
+        topPages = topPages.slice(0, maxChunks);
+      }
+    }
+  }
+
+  if (topPages.length === 0) return "";
 
   return topPages
     .map(({ page }) => {
@@ -121,12 +141,10 @@ function findRelevantContext(question, kb, maxChunks = 5) {
           const start = Math.max(0, womenTop10Start - 100);
           sections.push(bodyNormalized.slice(start, start + 4000));
         }
-
         if (isMensQuery && menTop10Start >= 0) {
           const start = Math.max(0, menTop10Start - 100);
           sections.push(bodyNormalized.slice(start, start + 4000));
         }
-
         if (sections.length === 0) {
           if (menTop10Start >= 0) {
             const start = Math.max(0, menTop10Start - 100);
@@ -137,7 +155,6 @@ function findRelevantContext(question, kb, maxChunks = 5) {
             sections.push(bodyNormalized.slice(start, start + 3000));
           }
         }
-
         if (sections.length === 0) {
           const starts = [rankingsStart, top10Start].filter((i) => i >= 0);
           if (starts.length > 0) {
@@ -145,7 +162,6 @@ function findRelevantContext(question, kb, maxChunks = 5) {
             sections.push(bodyNormalized.slice(start, start + 6000));
           }
         }
-
         if (sections.length > 0) {
           excerpt = sections.join("\n\n");
         }
@@ -160,7 +176,7 @@ function findRelevantContext(question, kb, maxChunks = 5) {
     .join("\n\n");
 }
 
-// ── System prompt ────────────────────────────────────────────────
+// ── System prompt ────────────────────────────────────────────
 
 const SYSTEM_PROMPT = `You are the nichegolfHQ Assistant — an AI agent that lives on nichegolfhq.com and helps people with everything related to competitive amateur golf.
 
@@ -195,7 +211,7 @@ GUIDELINES
 - If someone asks about something outside golf, politely redirect: "I'm built to help with competitive amateur golf — want to ask me something on that topic?"
 - Never make up tournament results or scores.`;
 
-// ── Chat function ────────────────────────────────────────────────
+// ── Chat function ────────────────────────────────────────────
 
 /**
  * @param {string} userMessage   The user's question
